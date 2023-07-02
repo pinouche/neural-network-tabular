@@ -1,25 +1,38 @@
+import numpy as np
+
 import torch.nn as nn
 from torch.optim import Adam
 from torch.utils.data import DataLoader
 
-from neural_network.dataset.torch_dataset import CompetitionDataset
+from neural_network.dataset.torch_dataset import CompetitionDataset, CustomSampler
 from neural_network.models.model import FeedForward
 from neural_network.trainers.trainer import Trainer
 from neural_network.metrics.reconstruction import ReconstructionMetric
 
 
+# def collate_fn(batch):
+# #     print(batch, len(batch))
+# #     #batch = batch.groupby("date").apply(lambda x: x)
+# #
+# #     print("BATCH IN COLLATE FUNCTION", batch)
+# #     return batch
+
+
 class NNTrainer(Trainer):
     def create_data(self):
-        def variable_size_collate_fn(batch):
-            return batch
 
         self.train_dataset = CompetitionDataset(mode='train')
         self.val_dataset = CompetitionDataset(mode='val')
 
-        self.train_dataloader = DataLoader(self.train_dataset, self.config.batch_size, shuffle=True,
-                                           collate_fn=variable_size_collate_fn)
-        self.val_dataloader = DataLoader(self.val_dataset, self.config.batch_size, shuffle=False,
-                                         collate_fn=variable_size_collate_fn)
+        custom_indices_train = np.unique(self.train_dataset.input_data_x["date"])
+        custom_indices_val = np.unique(self.val_dataset.input_data_x["date"])
+        sampler_train = CustomSampler(custom_indices_train)
+        sampler_val = CustomSampler(custom_indices_val)
+
+        print("WE ARE HERE")
+        print(self.val_dataset.input_data_x.shape)
+        self.train_dataloader = DataLoader(self.train_dataset, sampler=sampler_train, batch_size=1)
+        self.val_dataloader = DataLoader(self.val_dataset, sampler=sampler_val, batch_size=1)
 
     def create_model(self):
         self.model = FeedForward(self.train_dataset.input_data_x.shape[1], self.config.hidden_size, 1)
