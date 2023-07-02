@@ -7,7 +7,7 @@ import yaml
 import torch
 from tqdm import tqdm
 
-from morphing_rovers.utils import Config
+from neural_network.utils import Config
 
 
 device = "cuda" if torch.cuda.is_available() else "cpu"

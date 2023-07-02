@@ -11,20 +11,20 @@ device = "cuda" if torch.cuda.is_available() else "cpu"
 
 class CompetitionDataset(Dataset):
 
-    def __init__(self, options, mode='train'):
+    def __init__(self, mode='train'):
 
         if mode == "train":
-            self.input_data = pickle.load(open(DATA_PATH_TRAIN, "rb"))
+            self.input_data_x, self.input_data_y = pickle.load(open(DATA_PATH_TRAIN, "rb"))
         elif mode == "val":
-            self.input_data = pickle.load(open(DATA_PATH_VAL, "rb"))
+            self.input_data_x, self.input_data_y = pickle.load(open(DATA_PATH_VAL, "rb"))
         else:
             raise ValueError(f"mode {mode} is not valid.")
 
-        print("DATASET SHAPE", self.input_data.shape)
+        print("DATASET SHAPE", self.input_data_x.shape)
 
         self.filenames = dict()
-        self.filenames['x'] = self.input_data
-        self.filenames['y'] = self.input_data
+        self.filenames['x'] = self.input_data_x
+        self.filenames['y'] = self.input_data_y
 
     def __getitem__(self, index):
         batch = dict()
