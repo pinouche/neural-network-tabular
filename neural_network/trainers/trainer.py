@@ -102,8 +102,6 @@ class Trainer:
         """Compute the loss."""
 
     def train_step(self, batch, iteration):
-        # Fetch data
-        # batch = self._get_next_batch()
         self.preprocess_batch(batch)
 
         # Forward pass
@@ -188,7 +186,10 @@ class Trainer:
     def preprocess_batch(self, batch):
         # Cast to device
         for key, value in batch.items():
-            batch[key] = torch.unsqueeze(value.to(self.device), 1)
+            value = value.to(torch.float32).to(self.device)
+            if key == "x":
+                value = torch.squeeze(value)
+            batch[key] = value
 
     def save_checkpoint(self):
         checkpoint = dict(model=self.model.state_dict(),

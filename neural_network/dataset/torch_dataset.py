@@ -1,6 +1,7 @@
 import random
 import pickle
 import os
+import numpy as np
 
 import torch
 from torch.utils.data import Dataset, Sampler
@@ -40,13 +41,9 @@ class CompetitionDataset(Dataset):
     def __getitem__(self, index):
         batch = dict()
 
-        print("SHAPE 1", self.input_data_x.shape)
-
         features_columns = [col for col in self.filenames['x'].columns if col not in ["date", "id"]]
         subset_x = self.filenames['x'][self.filenames['x']["date"] == index][features_columns]
         subset_y = self.filenames['y'][self.filenames['y']["date"] == index]
-
-        print("SHAPE", subset_x.shape, subset_y.shape)
 
         batch['x'] = torch.from_numpy(subset_x.values)
         batch['y'] = torch.from_numpy(subset_y["y"].values)
