@@ -60,6 +60,10 @@ class Trainer:
         self.loss_fn = None
         self.create_loss()
 
+        self.loss_factor = -1
+        if isinstance(self.loss_fn, torch.nn.modules.loss.MSELoss):
+            self.loss_factor = 1
+
         ##########
         # Optimiser
         ##########
@@ -69,8 +73,7 @@ class Trainer:
         ##########
         # Metrics
         ##########
-        self.train_metrics = None
-        self.val_metrics = None
+        self.metric = None
         self.create_metrics()
 
     @abstractmethod
@@ -113,7 +116,7 @@ class Trainer:
         loss.backward()
         self.optimiser.step()
 
-        return loss.item()
+        return loss.item()*self.loss_factor
 
     def train(self):
         print('Starting training session..')
@@ -151,10 +154,11 @@ class Trainer:
     def test_step(self, batch, iteration):
         self.preprocess_batch(batch)
         output = self.forward_model(batch)
+        self.metric.update(pred=output, target=batch['y'])
         # self.reconstructed_data.append((batch['x'].numpy(force=True), output.numpy(force=True)))
         loss = self.forward_loss(batch, output)
 
-        return loss.item()
+        return loss.item()*self.loss_factor
 
     def test(self):
         self.model.eval()
@@ -168,6 +172,8 @@ class Trainer:
             val_loss /= len(self.val_dataloader)
 
         print(f'Val loss: {val_loss:.4f}')
+        val_score = self.metric.evaluate()
+        print(f'Val spearman metric: {val_score:.4f}')
 
         self.model.train()
         return val_loss

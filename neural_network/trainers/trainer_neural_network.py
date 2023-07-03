@@ -8,7 +8,10 @@ from torch.utils.data import DataLoader
 from neural_network.dataset.torch_dataset import CompetitionDataset, CustomSampler
 from neural_network.models.model import FeedForward
 from neural_network.trainers.trainer import Trainer
-from neural_network.metrics.reconstruction import ReconstructionMetric
+from neural_network.metrics.spearman_metric import SpearmanCorrCoefMetric, differentiable_spearman
+from torchmetrics import PearsonCorrCoef, SpearmanCorrCoef
+
+device = "cuda" if torch.cuda.is_available() else "cpu"
 
 
 class NNTrainer(Trainer):
@@ -29,18 +32,20 @@ class NNTrainer(Trainer):
         self.model = FeedForward(self.train_dataset.input_data_x.shape[1]-2, self.config.hidden_size, 1)
 
     def create_loss(self):
-        self.loss_fn = nn.MSELoss()
+        # self.loss_fn = nn.MSELoss()
+        # self.loss_fn = PearsonCorrCoef().to(device)
+        self.loss_fn = differentiable_spearman
 
     def create_optimiser(self):
         parameters_with_grad = filter(lambda p: p.requires_grad, self.model.parameters())
         self.optimiser = Adam(parameters_with_grad, self.config.learning_rate, weight_decay=self.config.weight_decay)
 
     def create_metrics(self):
-        self.train_metrics = ReconstructionMetric('train')
-        self.val_metrics = ReconstructionMetric('val')
+        self.metric = SpearmanCorrCoefMetric()
 
     def forward_model(self, batch):
         return self.model(batch['x'])
 
     def forward_loss(self, batch, output):
-        return self.loss_fn(torch.transpose(output, 1, 0), batch['y'])
+        loss = self.loss_fn(torch.squeeze(output), torch.squeeze(batch['y']))
+        return loss
