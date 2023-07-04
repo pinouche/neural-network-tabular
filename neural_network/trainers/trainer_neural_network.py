@@ -6,7 +6,8 @@ from torch.optim import Adam
 from torch.utils.data import DataLoader
 
 from neural_network.dataset.torch_dataset import CompetitionDataset, CustomSampler
-from neural_network.models.model import FeedForward
+from neural_network.models.feed_forward_model import FeedForward
+from neural_network.models.transformer_model import TransformerEncoder
 from neural_network.trainers.trainer import Trainer
 from neural_network.metrics.spearman_metric import SpearmanCorrCoefMetric, differentiable_spearman
 from torchmetrics import PearsonCorrCoef, SpearmanCorrCoef
@@ -29,16 +30,27 @@ class NNTrainer(Trainer):
         self.val_dataloader = DataLoader(self.val_dataset, sampler=sampler_val, batch_size=1)
 
     def create_model(self):
-        self.model = FeedForward(self.train_dataset.input_data_x.shape[1]-2, self.config.hidden_size, 1)
+        if self.config.model_str == "mlp":
+            self.model = FeedForward(self.train_dataset.input_data_x.shape[1] - 2, self.config.hidden_size, 1)
+        elif self.config.model_str == "transformer":
+
+            self.model = TransformerEncoder(self.train_dataset.input_data_x.shape[1] - 2, 1, self.config.num_layers,
+                                            self.config.hidden_size,
+                                            self.config.num_heads,
+                                            self.config.dropout)
+        else:
+            raise ValueError(f"model type {self.config.model_str} has no associated model")
 
     def create_loss(self):
         # self.loss_fn = nn.MSELoss()
-        # self.loss_fn = PearsonCorrCoef().to(device)
-        self.loss_fn = differentiable_spearman
+        self.loss_fn = PearsonCorrCoef().to(device)
+        # self.loss_fn = differentiable_spearman
 
     def create_optimiser(self):
         parameters_with_grad = filter(lambda p: p.requires_grad, self.model.parameters())
-        self.optimiser = Adam(parameters_with_grad, self.config.learning_rate, weight_decay=self.config.weight_decay)
+        self.optimiser = Adam(parameters_with_grad,
+                              self.config.learning_rate,
+                              weight_decay=self.config.weight_decay)
 
     def create_metrics(self):
         self.metric = SpearmanCorrCoefMetric()

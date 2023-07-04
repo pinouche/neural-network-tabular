@@ -1,0 +1,14 @@
+# model type
+model_str: "transformer"
+
+# parameters for the transformer model
+
+num_layers: 2
+hidden_size: 123
+num_heads: 7
+dropout: 0.2
+
+n_epochs: 1
+batch_size: 1
+learning_rate: 0.01
+weight_decay: 0.000
