@@ -11,9 +11,14 @@ class TransformerEncoder(nn.Module):
             num_layers=num_layers
         )
 
-        self.fc = nn.Linear(input_size, output_size)
+        self.relu = nn.ReLU()
+        self.fc = nn.Linear(input_size*2, input_size)
+        self.fc2 = nn.Linear(input_size, output_size)
 
     def forward(self, src):
         output = self.transformer(src)
-        output = self.fc(output.mean(dim=0))  # Average the sequence and pass through linear layer
-        return output.squeeze()  # Squeeze the output to a single number
+        output = torch.cat((output, src), dim=1)
+        output = self.fc(output)
+        output = self.relu(output)
+        output = self.fc2(output)
+        return output  # Squeeze the output to a single number

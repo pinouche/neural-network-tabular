@@ -2,7 +2,7 @@ import numpy as np
 
 import torch
 import torch.nn as nn
-from torch.optim import Adam
+from torch.optim import Adam, SGD
 from torch.utils.data import DataLoader
 
 from neural_network.dataset.torch_dataset import CompetitionDataset, CustomSampler
@@ -12,10 +12,18 @@ from neural_network.trainers.trainer import Trainer
 from neural_network.metrics.spearman_metric import SpearmanCorrCoefMetric, differentiable_spearman
 from torchmetrics import PearsonCorrCoef, SpearmanCorrCoef
 
-device = "cuda" if torch.cuda.is_available() else "cpu"
+# device = "cuda" if torch.cuda.is_available() else "cpu"
+# print("DEVICE", device)
 
 
 class NNTrainer(Trainer):
+
+    def get_device(self):
+        if self.config.model_str == "transformer":
+            self.device = "cpu"
+        else:
+            self.device = "cuda" if torch.cuda.is_available() else "cpu"
+
     def create_data(self):
 
         self.train_dataset = CompetitionDataset(mode='train')
@@ -30,6 +38,8 @@ class NNTrainer(Trainer):
         self.val_dataloader = DataLoader(self.val_dataset, sampler=sampler_val, batch_size=1)
 
     def create_model(self):
+        self.get_device()
+
         if self.config.model_str == "mlp":
             self.model = FeedForward(self.train_dataset.input_data_x.shape[1] - 2, self.config.hidden_size, 1)
         elif self.config.model_str == "transformer":
@@ -41,9 +51,12 @@ class NNTrainer(Trainer):
         else:
             raise ValueError(f"model type {self.config.model_str} has no associated model")
 
+        print("SELF DEVICE", self.device)
+        self.model = self.model.to(self.device)
+
     def create_loss(self):
         # self.loss_fn = nn.MSELoss()
-        self.loss_fn = PearsonCorrCoef().to(device)
+        self.loss_fn = PearsonCorrCoef().to(self.device)
         # self.loss_fn = differentiable_spearman
 
     def create_optimiser(self):
