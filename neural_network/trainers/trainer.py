@@ -23,7 +23,7 @@ class Trainer:
         ##########
         self.global_step = 0
         self.start_time = None
-        self.best_score = float('inf')  # if the higher, the better times by -1
+        self.best_score = float('inf')*-1  # if the higher, the better times by -1
         # to log results
         self.loss_per_epoch = []
         self.reconstructed_data = []
@@ -139,7 +139,7 @@ class Trainer:
             self.loss_per_epoch.append((train_loss, test_loss))
             self.global_step += 1
 
-            if test_loss < self.best_score:
+            if test_loss > self.best_score:
                 print("new best loss of: {:.3f}".format(test_loss))
                 self.best_score = test_loss
                 self.save_checkpoint()
@@ -206,8 +206,8 @@ class Trainer:
         torch.save(checkpoint, checkpoint_name)
         print('Model saved to: {}\n'.format(checkpoint_name))
 
-    def load_checkpoint(self):
-        checkpoint_name = os.path.join(".", "experiments", self.config.session_name)
+    def load_checkpoint(self, session_name):
+        checkpoint_name = os.path.join(".", "experiments", session_name)
         checkpoint = torch.load(checkpoint_name, map_location=device)
 
         self.model.load_state_dict(checkpoint['model'])

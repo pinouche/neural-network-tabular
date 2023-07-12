@@ -11,14 +11,21 @@ class TransformerEncoder(nn.Module):
             num_layers=num_layers
         )
 
+        self.fc1 = nn.Linear(input_size*2, input_size)
+        self.fc2 = nn.Linear(input_size, output_size, bias=False)
+
         self.relu = nn.ReLU()
-        self.fc = nn.Linear(input_size*2, input_size)
-        self.fc2 = nn.Linear(input_size, output_size)
+        self.dropout = nn.Dropout(dropout)
 
     def forward(self, src):
+
         output = self.transformer(src)
+        # output = torch.unsqueeze(output, dim=0).repeat(src.shape[0], 1)
         output = torch.cat((output, src), dim=1)
-        output = self.fc(output)
+        output = self.dropout(output)
+        output = self.fc1(output)
+        output = self.dropout(output)
         output = self.relu(output)
         output = self.fc2(output)
+
         return output  # Squeeze the output to a single number

@@ -1,4 +1,5 @@
 import numpy as np
+import os
 
 import torch
 import torch.nn as nn
@@ -41,13 +42,18 @@ class NNTrainer(Trainer):
         self.get_device()
 
         if self.config.model_str == "mlp":
-            self.model = FeedForward(self.train_dataset.input_data_x.shape[1] - 2, self.config.hidden_size, 1)
+            if os.path.exists("../experiments/session_1"):
+                self.model = self.load_checkpoint(self.config.session_name)
+            else:
+                self.model = FeedForward(self.train_dataset.input_data_x.shape[1] - 2, self.config.hidden_size, 1)
         elif self.config.model_str == "transformer":
-
-            self.model = TransformerEncoder(self.train_dataset.input_data_x.shape[1] - 2, 1, self.config.num_layers,
-                                            self.config.hidden_size,
-                                            self.config.num_heads,
-                                            self.config.dropout)
+            if os.path.exists("../experiments/session_1"):
+                self.model = self.load_checkpoint(self.config.session_name)
+            else:
+                self.model = TransformerEncoder(self.train_dataset.input_data_x.shape[1] - 2, 1, self.config.num_layers,
+                                                self.config.hidden_size,
+                                                self.config.num_heads,
+                                                self.config.dropout)
         else:
             raise ValueError(f"model type {self.config.model_str} has no associated model")
 
@@ -62,7 +68,8 @@ class NNTrainer(Trainer):
     def create_optimiser(self):
         parameters_with_grad = filter(lambda p: p.requires_grad, self.model.parameters())
         self.optimiser = Adam(parameters_with_grad,
-                              self.config.learning_rate,
+                              betas=(0.92, 0.92),
+                              lr=self.config.learning_rate,
                               weight_decay=self.config.weight_decay)
 
     def create_metrics(self):

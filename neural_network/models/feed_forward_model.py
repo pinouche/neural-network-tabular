@@ -27,6 +27,7 @@ class FeedForward(nn.Module):
         x = self.relu(x)
         x = self.bn2(x)
         x = self.fc3(x)
+        x = self.dropout(x)
         x = self.relu(x)
         x = self.bn3(x)
         x = self.fc4(x)

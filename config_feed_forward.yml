@@ -2,7 +2,7 @@
 model_str: "mlp"
 
 # parameters for the feedforward model
-learning_rate: 0.01
+learning_rate: 0.001
 weight_decay: 0.000
 batch_size: 512
 n_epochs: 1500
