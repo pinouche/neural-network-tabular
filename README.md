@@ -9,8 +9,8 @@
 
 
 ```bash
-conda create -n market_competition python=3.10
-conda activate market_competition
+conda create -n <my_env> python=3.10
+conda activate <my_env>
 poetry install
 ```
 

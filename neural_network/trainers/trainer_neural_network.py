@@ -68,7 +68,6 @@ class NNTrainer(Trainer):
     def create_optimiser(self):
         parameters_with_grad = filter(lambda p: p.requires_grad, self.model.parameters())
         self.optimiser = Adam(parameters_with_grad,
-                              betas=(0.92, 0.92),
                               lr=self.config.learning_rate,
                               weight_decay=self.config.weight_decay)
 
