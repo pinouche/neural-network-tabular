@@ -1,2 +1,1 @@
-# nn_for_tabular_data
-research on neural network for tabular data
+Research project on using neural networks for tabular data.
