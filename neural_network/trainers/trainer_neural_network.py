@@ -38,6 +38,9 @@ class NNTrainer(Trainer):
                                                                    val_start=self.config.val_start,
                                                                    val_end=1.0)
 
+        custom_indices_train = np.unique(x_train["date"])
+        custom_indices_val = np.unique(x_val["date"])
+
         x_train, x_val, y_train, y_val = get_training_data(x_train,
                                                            x_val,
                                                            y_train,
@@ -46,8 +49,6 @@ class NNTrainer(Trainer):
         self.train_dataset = CompetitionDataset(x_train, y_train)
         self.val_dataset = CompetitionDataset(x_val, y_val)
 
-        custom_indices_train = np.unique(self.train_dataset.input_data_x["date"])
-        custom_indices_val = np.unique(self.val_dataset.input_data_x["date"])
         sampler_train = CustomSampler(custom_indices_train)
         sampler_val = CustomSampler(custom_indices_val)
 

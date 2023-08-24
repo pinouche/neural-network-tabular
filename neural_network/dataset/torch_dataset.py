@@ -30,9 +30,11 @@ class CompetitionDataset(Dataset):
     def __getitem__(self, index):
         batch = dict()
 
-        features_columns = [col for col in self.filenames['x'].columns if col not in ["date", "id"]]
-        subset_x = self.filenames['x'][self.filenames['x']["date"] == index][features_columns]
+        subset_x = self.filenames['x'][self.filenames['x']["date"] == index]
         subset_y = self.filenames['y'][self.filenames['y']["date"] == index]
+
+        subset_x = subset_x.drop(columns=['id', 'date'], inplace=False)
+        subset_y = subset_y.drop(columns=['id', 'date'], inplace=False)
 
         batch['x'] = torch.from_numpy(subset_x.values)
         batch['y'] = torch.from_numpy(subset_y["y"].values)

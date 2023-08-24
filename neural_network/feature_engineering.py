@@ -2,14 +2,6 @@ import numpy as np
 import pandas as pd
 
 
-def return_features(data):
-    if "id" in data.columns and "date" in data.columns:
-        data = data.drop(columns=['id', 'date'], inplace=False)
-    data = data.values
-
-    return data
-
-
 def get_training_data(x_train, x_val, y_train, y_val):
 
     k = 100
@@ -18,14 +10,7 @@ def get_training_data(x_train, x_val, y_train, y_val):
     x_train = feature_engineering(x_train, top_correlated_features)
     x_val = feature_engineering(x_val, top_correlated_features)
 
-    x_train = x_train.drop(columns=['id', 'date'], inplace=False).values
-    x_val = x_val.drop(columns=['id', 'date'], inplace=False).values
-
-    y_train = return_features(y_train)
-    y_val = return_features(y_val)
-
     return x_train, x_val, y_train, y_val
-
 
 
 def compute_rank_percentile(df):
