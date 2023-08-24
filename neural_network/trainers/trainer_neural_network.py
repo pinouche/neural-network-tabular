@@ -2,17 +2,20 @@ import numpy as np
 import os
 
 import torch
-import torch.nn as nn
 from torch.optim import Adam
 from torch.utils.data import DataLoader
 
 from neural_network.utils import load_data, temporal_train_test_split
+from neural_network.feature_engineering import get_training_data
+
 from neural_network.dataset.torch_dataset import CompetitionDataset, CustomSampler
 from neural_network.models.feed_forward_model import FeedForward
 from neural_network.models.transformer_model import TransformerEncoder
 from neural_network.trainers.trainer import Trainer
+
 from neural_network.metrics.spearman_metric import SpearmanCorrCoefMetric, differentiable_spearman
 from torchmetrics import PearsonCorrCoef, SpearmanCorrCoef
+
 
 # device = "cuda" if torch.cuda.is_available() else "cpu"
 # print("DEVICE", device)
@@ -34,6 +37,11 @@ class NNTrainer(Trainer):
                                                                    train_end=self.config.val_start,
                                                                    val_start=self.config.val_start,
                                                                    val_end=1.0)
+
+        x_train, x_val, y_train, y_val = get_training_data(x_train,
+                                                           x_val,
+                                                           y_train,
+                                                           y_val)
 
         self.train_dataset = CompetitionDataset(x_train, y_train)
         self.val_dataset = CompetitionDataset(x_val, y_val)
