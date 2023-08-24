@@ -2,7 +2,6 @@ from abc import ABCMeta, abstractmethod
 
 import json
 import os
-import pickle
 import yaml
 import torch
 from tqdm import tqdm

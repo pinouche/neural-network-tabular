@@ -1,13 +1,7 @@
 import random
-import pickle
-import os
-import numpy as np
-
 import torch
 from torch.utils.data import Dataset, Sampler
 
-DATA_PATH_TRAIN = "./training_dataset/training_data.p"
-DATA_PATH_VAL = "./training_dataset/val_data.p"
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
 
@@ -25,14 +19,9 @@ class CustomSampler(Sampler):
 
 class CompetitionDataset(Dataset):
 
-    def __init__(self, mode='train'):
-
-        if mode == "train":
-            self.input_data_x, self.input_data_y = pickle.load(open(DATA_PATH_TRAIN, "rb"))
-        elif mode == "val":
-            self.input_data_x, self.input_data_y = pickle.load(open(DATA_PATH_VAL, "rb"))
-        else:
-            raise ValueError(f"mode {mode} is not valid.")
+    def __init__(self, data_x, data_y):
+        self.input_data_x = data_x
+        self.input_data_y = data_y
 
         self.filenames = dict()
         self.filenames['x'] = self.input_data_x

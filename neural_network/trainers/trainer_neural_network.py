@@ -3,9 +3,10 @@ import os
 
 import torch
 import torch.nn as nn
-from torch.optim import Adam, SGD
+from torch.optim import Adam
 from torch.utils.data import DataLoader
 
+from neural_network.utils import load_data, temporal_train_test_split
 from neural_network.dataset.torch_dataset import CompetitionDataset, CustomSampler
 from neural_network.models.feed_forward_model import FeedForward
 from neural_network.models.transformer_model import TransformerEncoder
@@ -27,8 +28,15 @@ class NNTrainer(Trainer):
 
     def create_data(self):
 
-        self.train_dataset = CompetitionDataset(mode='train')
-        self.val_dataset = CompetitionDataset(mode='val')
+        data_x, data_y = load_data()
+        x_train, x_val, y_train, y_val = temporal_train_test_split(data_x, data_y,
+                                                                   train_start=0.0,
+                                                                   train_end=self.config.val_start,
+                                                                   val_start=self.config.val_start,
+                                                                   val_end=1.0)
+
+        self.train_dataset = CompetitionDataset(x_train, y_train)
+        self.val_dataset = CompetitionDataset(x_val, y_val)
 
         custom_indices_train = np.unique(self.train_dataset.input_data_x["date"])
         custom_indices_val = np.unique(self.val_dataset.input_data_x["date"])

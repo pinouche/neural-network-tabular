@@ -5,8 +5,11 @@ model_str: "mlp"
 learning_rate: 0.001
 weight_decay: 0.000
 batch_size: 512
-n_epochs: 1500
+n_epochs: 100
 hidden_size: 1024
+
+# dataset split parameters
+val_start: 0.8
 
 # session name
 session_name: "session_1"
