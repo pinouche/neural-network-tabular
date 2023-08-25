@@ -36,7 +36,7 @@ class CompetitionDataset(Dataset):
         subset_x = subset_x.drop(columns=['id', 'date'], inplace=False)
         subset_y = subset_y.drop(columns=['id', 'date'], inplace=False)
 
-        batch['x'] = torch.from_numpy(subset_x.values)
+        batch['x'] = torch.tensor(subset_x.values, requires_grad=True)
         batch['y'] = torch.from_numpy(subset_y["y"].values)
 
         return batch

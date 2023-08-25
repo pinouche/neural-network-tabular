@@ -2,11 +2,12 @@ import numpy as np
 import os
 
 import torch
+from torch import nn
 from torch.optim import Adam
 from torch.utils.data import DataLoader
 
-from neural_network.utils import load_data, temporal_train_test_split
 from neural_network.feature_engineering import get_training_data
+from neural_network.utils import load_data, temporal_train_test_split
 
 from neural_network.dataset.torch_dataset import CompetitionDataset, CustomSampler
 from neural_network.models.feed_forward_model import FeedForward
@@ -15,10 +16,6 @@ from neural_network.trainers.trainer import Trainer
 
 from neural_network.metrics.spearman_metric import SpearmanCorrCoefMetric, differentiable_spearman
 from torchmetrics import PearsonCorrCoef, SpearmanCorrCoef
-
-
-# device = "cuda" if torch.cuda.is_available() else "cpu"
-# print("DEVICE", device)
 
 
 class NNTrainer(Trainer):
@@ -59,18 +56,21 @@ class NNTrainer(Trainer):
         self.get_device()
 
         if self.config.model_str == "mlp":
-            if os.path.exists("../experiments/session_1"):
-                self.model = self.load_checkpoint(self.config.session_name)
-            else:
-                self.model = FeedForward(self.train_dataset.input_data_x.shape[1] - 2, self.config.hidden_size, 1)
+            self.model = FeedForward(self.train_dataset.input_data_x.shape[1] - 2,
+                                     self.config.hidden_size,
+                                     1,
+                                     self.config.dropout_rate)
+            if os.path.exists("./experiments/session_1"):
+                self.load_model_checkpoint(self.config.session_name)
+
         elif self.config.model_str == "transformer":
-            if os.path.exists("../experiments/session_1"):
-                self.model = self.load_checkpoint(self.config.session_name)
-            else:
-                self.model = TransformerEncoder(self.train_dataset.input_data_x.shape[1] - 2, 1, self.config.num_layers,
-                                                self.config.hidden_size,
-                                                self.config.num_heads,
-                                                self.config.dropout)
+            self.model = TransformerEncoder(self.train_dataset.input_data_x.shape[1] - 2, 1, self.config.num_layers,
+                                            self.config.hidden_size,
+                                            self.config.num_heads,
+                                            self.config.dropout)
+            if os.path.exists("./experiments/session_1"):
+                self.load_model_checkpoint(self.config.session_name)
+
         else:
             raise ValueError(f"model type {self.config.model_str} has no associated model")
 
@@ -91,8 +91,8 @@ class NNTrainer(Trainer):
     def create_metrics(self):
         self.metric = SpearmanCorrCoefMetric()
 
-    def forward_model(self, batch):
-        return self.model(batch['x'])
+    def forward_model(self, batch, feature_mask):
+        return self.model(batch['x'], feature_mask)
 
     def forward_loss(self, batch, output):
         loss = self.loss_fn(torch.squeeze(output), torch.squeeze(batch['y']))

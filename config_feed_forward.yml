@@ -3,13 +3,17 @@ model_str: "mlp"
 
 # parameters for the feedforward model
 learning_rate: 0.001
-weight_decay: 0.000
+weight_decay: 0.00
 batch_size: 512
-n_epochs: 100
-hidden_size: 1024
+n_epochs: 1000
+hidden_size: 2048
 
 # dataset split parameters
-val_start: 0.8
+val_start: 0.9
+
+# tabular data features
+feature_proportion: 1.0
+dropout_rate: 0.5
 
 # session name
 session_name: "session_1"

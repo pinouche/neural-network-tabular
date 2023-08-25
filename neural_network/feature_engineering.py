@@ -88,5 +88,3 @@ def feature_engineering(data, top_correlated_features):
                       pd.DataFrame(rank_quantile_data)), axis=1)
 
     return data
-
-

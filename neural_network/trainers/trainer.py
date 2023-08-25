@@ -22,7 +22,7 @@ class Trainer:
         ##########
         self.global_step = 0
         self.start_time = None
-        self.best_score = float('inf')*-1  # if the higher, the better times by -1
+        self.best_score = float('inf')  # if the higher, the better times by -1
         # to log results
         self.loss_per_epoch = []
         self.reconstructed_data = []
@@ -46,7 +46,7 @@ class Trainer:
         self.create_data()
 
         ##########
-        # Model
+        # Model and optimizer
         ##########
         self.device = device
         self.model = None
@@ -75,6 +75,13 @@ class Trainer:
         self.metric = None
         self.create_metrics()
 
+        ##########
+        # tabular data features
+        ##########
+        self.n_features = self.train_dataset.input_data_x.shape[1]-2
+        self.exp_mv_avg_gradient = torch.zeros(self.n_features).to(self.device)
+        self.feature_mask = torch.ones(self.n_features).to(self.device)
+
     @abstractmethod
     def create_data(self):
         """Create train/val datasets and dataloaders."""
@@ -96,19 +103,27 @@ class Trainer:
         """Implement the metrics."""
 
     @abstractmethod
-    def forward_model(self, batch):
+    def forward_model(self, batch, feature_mask):
         """Compute the output of the model."""
 
     @abstractmethod
     def forward_loss(self, batch, output):
         """Compute the loss."""
 
-    def train_step(self, batch, iteration):
+    def train_step(self, batch):
         self.preprocess_batch(batch)
 
         # Forward pass
-        output = self.forward_model(batch)
+        output = self.forward_model(batch, self.feature_mask)
         loss = self.forward_loss(batch, output)
+        # compute the gradient of the loss wrt inputs
+        loss_input_gradient = torch.autograd.grad(inputs=batch['x'],
+                                                  outputs=loss,
+                                                  retain_graph=True)
+        self.exp_mv_avg_gradient += torch.abs(torch.mean(loss_input_gradient[0], dim=0))
+        self.exp_mv_avg_gradient /= 2
+        self.feature_mask = self.exp_mv_avg_gradient >= torch.quantile(self.exp_mv_avg_gradient,
+                                                                       1 - self.config.feature_proportion)
 
         # Backward pass
         self.optimiser.zero_grad()
@@ -127,7 +142,7 @@ class Trainer:
             train_loss = 0
             for iteration, batch in tqdm(enumerate(self.train_dataloader), total=len(self.train_dataloader)):
 
-                loss = self.train_step(batch, iteration)
+                loss = self.train_step(batch)
                 train_loss += loss
 
             train_loss /= len(self.train_dataloader)
@@ -138,23 +153,19 @@ class Trainer:
             self.loss_per_epoch.append((train_loss, test_loss))
             self.global_step += 1
 
-            if test_loss > self.best_score:
-                print("new best loss of: {:.3f}".format(test_loss))
-                self.best_score = test_loss
-                self.save_checkpoint()
+            # if test_loss > self.best_score:
+            # print("new best loss of: {:.3f}".format(test_loss))
+            # self.best_score = test_loss
+            self.save_checkpoint()
 
         with open("./experiments/results_loss.json", "w") as f:
             dic_result = {"loss": self.loss_per_epoch}
             json.dump(dic_result, f)
 
-        # with open("./experiments/results_reconstruction.p", "wb") as f:
-        #     pickle.dump(self.reconstructed_data, f)
-
-    def test_step(self, batch, iteration):
+    def test_step(self, batch):
         self.preprocess_batch(batch)
-        output = self.forward_model(batch)
+        output = self.forward_model(batch, torch.ones(self.n_features).to(self.device))
         self.metric.update(pred=output, target=batch['y'])
-        # self.reconstructed_data.append((batch['x'].numpy(force=True), output.numpy(force=True)))
         loss = self.forward_loss(batch, output)
 
         return loss.item()*self.loss_factor
@@ -165,7 +176,7 @@ class Trainer:
 
         with torch.no_grad():
             for iteration, batch in tqdm(enumerate(self.val_dataloader), total=len(self.val_dataloader)):
-                loss = self.test_step(batch, iteration)
+                loss = self.test_step(batch)
                 val_loss += loss
 
             val_loss /= len(self.val_dataloader)
@@ -205,10 +216,16 @@ class Trainer:
         torch.save(checkpoint, checkpoint_name)
         print('Model saved to: {}\n'.format(checkpoint_name))
 
-    def load_checkpoint(self, session_name):
+    def load_model_checkpoint(self, session_name):
+        print("loading existing model...")
         checkpoint_name = os.path.join(".", "experiments", session_name)
         checkpoint = torch.load(checkpoint_name, map_location=device)
-
         self.model.load_state_dict(checkpoint['model'])
+        print('Loaded model state from {}\n'.format(checkpoint_name))
+
+    def load_optimizer_checkpoint(self, session_name):
+        print("loading existing optimizer...")
+        checkpoint_name = os.path.join(".", "experiments", session_name)
+        checkpoint = torch.load(checkpoint_name, map_location=device)
         self.optimiser.load_state_dict(checkpoint['optimiser'])
-        print('Loaded model and optimiser weights from {}\n'.format(checkpoint_name))
+        print('Loaded optimiser state from {}\n'.format(checkpoint_name))
