@@ -1,4 +1,4 @@
-# Code for the ADIAlab / CrunchDao market prediction
+# Preliminary experiments for training neural networks on tabular data
 
 ## Set-up
 
